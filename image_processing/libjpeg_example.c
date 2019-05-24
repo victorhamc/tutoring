@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "jpeglib.h"
+#include <jpeglib.h>
 #include <setjmp.h>
 
 extern JSAMPLE *image_buffer;   /* Points to large array of R,G,B-order data */
