@@ -2,13 +2,11 @@
 #include <jpeglib.h>
 #include <setjmp.h>
 
-extern JSAMPLE *image_buffer;   /* Points to large array of R,G,B-order data */
-extern int image_height;        /* Number of rows in image */
-extern int image_width;         /* Number of columns in image */
+JSAMPLE *image_buffer;   /* Points to large array of R,G,B-order data */
+int image_height = 200;        /* Number of rows in image */
+int image_width = 144;         /* Number of columns in image */
 
-GLOBAL(void)
-write_JPEG_file(char *filename, int quality)
-{
+GLOBAL(int) write_JPEG_file(char *filename, int quality){
 
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
@@ -27,7 +25,7 @@ write_JPEG_file(char *filename, int quality)
 
   if ((outfile = fopen(filename, "wb")) == NULL) {
     fprintf(stderr, "can't open %s\n", filename);
-    exit(1);
+    return -1;
   }
   
   jpeg_stdio_dest(&cinfo, outfile);
@@ -71,6 +69,7 @@ write_JPEG_file(char *filename, int quality)
   jpeg_destroy_compress(&cinfo);
 
   /* And we're done! */
+  return 0;
 }
 
 struct my_error_mgr {
@@ -85,8 +84,7 @@ typedef struct my_error_mgr *my_error_ptr;
  * Here's the routine that will replace the standard error_exit method:
  */
 
-METHODDEF(void)
-my_error_exit(j_common_ptr cinfo)
+METHODDEF(void) my_error_exit(j_common_ptr cinfo)
 {
   /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
   my_error_ptr myerr = (my_error_ptr)cinfo->err;
@@ -106,8 +104,7 @@ my_error_exit(j_common_ptr cinfo)
  */
 
 
-GLOBAL(int)
-read_JPEG_file(char *filename)
+GLOBAL(int) read_JPEG_file(char *filename)
 {
 
   struct jpeg_decompress_struct cinfo;
@@ -136,11 +133,9 @@ read_JPEG_file(char *filename)
   jpeg_create_decompress(&cinfo);
 
   /* Step 2: specify data source (eg, a file) */
-
   jpeg_stdio_src(&cinfo, infile);
 
   /* Step 3: read file parameters with jpeg_read_header() */
-
   (void)jpeg_read_header(&cinfo, TRUE);
 
   /* Step 4: set parameters for decompression */
@@ -152,6 +147,10 @@ read_JPEG_file(char *filename)
   /* Step 5: Start decompressor */
 
   (void)jpeg_start_decompress(&cinfo);
+
+  printf("Image width: %d\n", cinfo.image_width);
+  printf("Image height: %d\n", cinfo.image_height);
+  printf("Color components: %d\n", cinfo.num_components);
 
   /* JSAMPLEs per row in output buffer */
   row_stride = cinfo.output_width * cinfo.output_components;
@@ -173,7 +172,7 @@ read_JPEG_file(char *filename)
      */
     (void)jpeg_read_scanlines(&cinfo, buffer, 1);
     /* Assume put_scanline_someplace wants a pointer and sample count. */
-    put_scanline_someplace(buffer[0], row_stride);
+    // put_scanline_someplace(buffer[0], row_stride);
   }
 
   /* Step 7: Finish decompression */
@@ -192,4 +191,11 @@ read_JPEG_file(char *filename)
 
   return 1;
 }
+
+int main(){
+	read_JPEG_file("test.jpg");
+	// write_JPEG_file("out.jpg", 100);
+	return 0;
+}
+
 
